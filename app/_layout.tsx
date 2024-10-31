@@ -1,66 +1,68 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { SplashScreen, Stack, useRouter } from 'expo-router';
-import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
-import { Provider as PaperProvider } from 'react-native-paper';
+// app/_layout.js
+import { useState, useEffect } from 'react';
+import { Drawer } from 'expo-router/drawer';
+import { Stack } from 'expo-router/stack';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Provider as PaperProvider, MD3LightTheme } from 'react-native-paper';
+import CustomDrawer from '@/components/navigation/CustomDrawer';
+import { ConvexProvider, ConvexReactClient } from "convex/react";
+import AuthProvider, { useAuth } from '@/components/AuthProvider';
 
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router';
+const convex = new ConvexReactClient(process.env.EXPO_PUBLIC_CONVEX_URL!, {
+  unsavedChangesWarning: false,
+});
 
-export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: 'index',
+// Optional: Customize the Material 3 theme
+const theme = {
+  ...MD3LightTheme,
+  colors: {
+    ...MD3LightTheme.colors,
+    //primary: '#6200EE',  // Adjust your primary color
+  },
 };
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
-
-export default function RootLayout() {
-  const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-    ...FontAwesome.font,
+export default function Layout() {
+  const [authState, setAuthState] = useState({
+    isLoggedIn: false,
+    jwt: undefined
   });
 
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
-  useEffect(() => {
-    if (error) throw error;
-  }, [error]);
 
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
-
-  if (!loaded) {
-    return null;
-  }
-
-  return <RootLayoutNav />;
-}
-
-function RootLayoutNav() {
-  const colorScheme = useColorScheme();
-  const router = useRouter();
-
-  useEffect(() => {
-    // Redirect to login screen when the app starts
-    router.replace('/login');
-  }, []);
+  const { token } = useAuth();
 
   return (
-    <PaperProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="login" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-        </Stack>
-      </ThemeProvider>
+    <PaperProvider theme={theme}>
+      <ConvexProvider client={convex}>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <AuthProvider>
+            <Navers />
+          </AuthProvider>
+        </GestureHandlerRootView>
+      </ConvexProvider>
     </PaperProvider>
+  );
+}
+
+function Navers() {
+  const { token } = useAuth();
+  return token !== '' ? (
+    <Drawer
+      screenOptions={{ headerShown: false }}
+      drawerContent={(props) => <CustomDrawer {...props} />}
+    />
+  ) : (
+    <Stack>
+      <Stack.Screen name="(auth)/login" options={{ headerShown: false }} />
+      <Stack.Screen name="(auth)/signup" 
+        options={{
+          title: 'Sign Up', 
+        }} 
+      />
+      <Stack.Screen name="(auth)/forgot-password" 
+        options={{
+          title: 'Forgot Password',
+        }} 
+      />
+    </Stack>
   );
 }
