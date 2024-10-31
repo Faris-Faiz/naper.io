@@ -39,7 +39,7 @@ export default function ComMap({children}: {children?: any}) {
             borderRadius: 32,
             borderStyle: "solid",
             borderWidth: 0,
-            padding: 64,
+            padding: 0,
             backgroundColor: "gray",
         }}>
             <MapView
@@ -48,8 +48,8 @@ export default function ComMap({children}: {children?: any}) {
                 initialRegion={{
                     latitude: location.coords.latitude,
                     longitude: location.coords.longitude,
-                    latitudeDelta: 0.0922,
-                    longitudeDelta: 0.0421,
+                    latitudeDelta: 0.01,
+                    longitudeDelta: 0.01,
                 }}
             >
                 <Marker
